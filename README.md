@@ -1,6 +1,6 @@
 # ATM Controller using Verilog HDL
 
-A modular **ATM Controller designed using Verilog HDL**, implementing PIN authentication, account selection, balance management, withdrawal, deposit, insufficient-funds handling, transaction control, and finite state machine (FSM) based system control.
+A modular **ATM Controller designed using Verilog HDL**, implementing PIN authentication, account selection, balance management, withdrawal, deposit, insufficient-funds handling, transaction control, and account locking.
 
 The project is designed with a **modular RTL architecture**, making it easier to simulate, verify, debug, and extend toward FPGA-based implementation.
 
@@ -385,4 +385,15 @@ The long-term goal is to extend the project into a complete hardware-software AT
 
 Through this project, the following concepts are practiced:
 
-1.
+1. Understanding modular RTL design and hardware architecture.
+2. Designing and integrating independent Verilog modules.
+3. Implementing finite state machines for real-world control systems.
+4. Using sequential and combinational logic to build reliable digital circuits.
+5. Managing registers, counters, control signals, and data paths.
+6. Designing PIN authentication and account-locking mechanisms.
+7. Implementing balance inquiry, withdrawal, deposit, and insufficient-funds handling.
+8. Developing transaction-control logic and coordinating system-level operations.
+9. Writing Verilog testbenches for functional verification.
+10. Debugging and validating digital designs using simulation tools such as Icarus Verilog and EDA Playground.
+11. Applying RTL design practices that support future FPGA implementation.
+12. Understanding how hardware modules can be extended into a complete hardware-software ATM system.
