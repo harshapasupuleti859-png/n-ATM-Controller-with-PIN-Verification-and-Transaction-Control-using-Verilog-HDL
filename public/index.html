@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ATM Hardware Controller — Verilog Front-End</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c15;
+    --panel: rgba(17, 24, 39, 0.85);
+    --screen: #02201b;
+    --screen-border: #059669;
+    --screen-text: #6ee7b7;
+    --screen-glow: rgba(16, 185, 129, 0.15);
+    --ink: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #10b981;
+    --warn: #f59e0b;
+    --bad: #ef4444;
+    --btn: #1e293b;
+    --btn-hover: #334155;
+    --border: rgba(255, 255, 255, 0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    background: var(--bg);
+    background-image: 
+      radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.12) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.08) 0%, transparent 40%);
+    background-attachment: fixed;
+    color: var(--ink);
+    min-height: 100vh;
+  }
+  header {
+    padding: 14px 24px;
+    background: rgba(8, 12, 21, 0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: #fff;
+  }
+  .brand-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #059669, #06b6d4);
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);
+  }
+  .brand-title {
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .nav-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 13px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+  }
+  .nav-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .nav-btn.active {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: var(--accent);
+    color: #6ee7b7;
+  }
+  .badge {
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 99px;
+    background: rgba(37, 99, 235, 0.2);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .badge.mock {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fde68a;
+    border-color: rgba(245, 158, 11, 0.3);
+  }
+  .pulse-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 6px currentColor;
+    animation: p 2s infinite;
+  }
+  @keyframes p { 0%,100% {opacity:1;} 50% {opacity:.4;} }
+
+  main {
+    display: grid;
+    grid-template-columns: minmax(320px, 440px) 1fr;
+    gap: 24px;
+    padding: 24px;
+    max-width: 1200px;
+    margin: auto;
+  }
+  @media (max-width: 900px){
+    main { grid-template-columns: 1fr; }
+  }
+
+  .atm-chassis {
+    background: var(--panel);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
+  }
+
+  .screen-bezel {
+    background: #021210;
+    border: 2px solid var(--screen-border);
+    border-radius: 14px;
+    padding: 20px;
+    min-height: 220px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--screen-text);
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8), 0 0 20px var(--screen-glow);
+    position: relative;
+    overflow: hidden;
+  }
+  .screen-bezel::before {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+    background-size: 100% 4px;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  .screen-content {
+    position: relative;
+    z-index: 3;
+  }
+  .screen h2 {
+    margin: 0 0 12px;
+    font-size: 18px;
+    color: #a7f3d0;
+    letter-spacing: 0.05em;
+    text-shadow: 0 0 10px rgba(167, 243, 208, 0.5);
+  }
+  .screen .msg {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #d1fae5;
+  }
+  .screen .big {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 12px 0;
+    color: #fff;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+  }
+  .screen .err { color: #fca5a5; text-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
+  .screen .warn { color: #fde68a; }
+  .entry {
+    margin-top: 14px;
+    font-size: 26px;
+    letter-spacing: 6px;
+    min-height: 36px;
+    color: #fff;
+    font-weight: 700;
+  }
+
+  .card-slot {
+    margin-top: 16px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 10px;
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .card-slot-label {
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+  }
+
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+
+  button {
+    background: var(--btn);
+    color: var(--ink);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s ease;
+  }
+  button:hover:not(:disabled) {
+    background: var(--btn-hover);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+  }
+  button:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  button:disabled { opacity: 0.35; cursor: not-allowed; }
+  button.go { background: #059669; border-color: #10b981; color: #fff; }
+  button.go:hover:not(:disabled) { background: #10b981; }
+  button.stop { background: #dc2626; border-color: #ef4444; color: #fff; }
+  button.stop:hover:not(:disabled) { background: #ef4444; }
+  button.alt { background: #2563eb; border-color: #3b82f6; color: #fff; }
+  button.alt:hover:not(:disabled) { background: #3b82f6; }
+
+  .keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .keypad button {
+    font-size: 20px;
+    font-weight: 700;
+    padding: 14px 0;
+    font-family: 'JetBrains Mono', monospace;
+    background: linear-gradient(180deg, #1e293b, #0f172a);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  .side { display: flex; flex-direction: column; gap: 20px; }
+  .card-panel {
+    background: var(--panel);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px;
+  }
+  .card-panel h3 {
+    margin: 0 0 14px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .sigs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+  }
+  .sig {
+    background: rgba(5, 8, 17, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+  .sig b {
+    display: block;
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 11px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .sig.on {
+    border-color: var(--accent);
+    background: rgba(16, 185, 129, 0.08);
+    box-shadow: inset 0 0 10px rgba(16, 185, 129, 0.15);
+  }
+  .sig.warn-on {
+    border-color: var(--bad);
+    background: rgba(239, 68, 68, 0.12);
+  }
+
+  pre#raw {
+    background: #050811;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 14px;
+    border-radius: 10px;
+    max-height: 220px;
+    overflow-y: auto;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1.5;
+    color: #93c5fd;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .table-box {
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  th {
+    background: rgba(255, 255, 255, 0.04);
+    padding: 8px 10px;
+    color: var(--muted);
+    font-weight: 600;
+    text-align: left;
+    position: sticky;
+    top: 0;
+  }
+  td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  #error {
+    display: none;
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid #ef4444;
+    color: #fca5a5;
+    padding: 12px 18px;
+    border-radius: 10px;
+    margin: 16px 24px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="brand">
+    <div class="brand-icon">⚡</div>
+    <div>
+      <div class="brand-title">ATM HARDWARE CONSOLE</div>
+    </div>
+  </a>
+
+  <div class="nav-group">
+    <a href="/" class="nav-btn">🏦 Bank Web Portal</a>
+    <a href="/atm" class="nav-btn active">💻 Hardware ATM Console</a>
+    <span id="backend" class="badge">
+      <span class="pulse-dot"></span>
+      <span>Connecting...</span>
+    </span>
+    <button onclick="doReset()" title="Resets the session and the Verilog design" style="padding: 7px 14px; font-size: 13px;">
+      🔄 Reset Simulation
+    </button>
+  </div>
+</header>
+
+<div id="error"></div>
+
+<main>
+  <!-- Left Side: ATM Hardware Mockup -->
+  <section class="atm-chassis">
+    <div class="screen-bezel">
+      <div class="screen-content" id="screen"></div>
+    </div>
+
+    <div class="card-slot">
+      <span class="card-slot-label">💳 CARD READER &amp; CHIP SENSOR</span>
+      <span id="slot-status" style="font-size: 12px; font-weight: 700; color: #10b981;">READY</span>
+    </div>
+
+    <div id="controls"></div>
+
+    <div style="margin-top: 14px; font-size: 11px; color: var(--muted); text-align: center;">
+      Keyboard controls: <b>0-9</b>, <b>Enter</b>, <b>Backspace</b> (Clear), <b>Esc</b> (Cancel)
+    </div>
+  </section>
+
+  <!-- Right Side: Live Verilog Bus Inspector -->
+  <section class="side">
+    <div class="card-panel">
+      <h3>🔬 Live Signal Pins from the Verilog DUT</h3>
+      <div class="sigs" id="sigs"></div>
+    </div>
+
+    <div class="card-panel">
+      <h3>📜 Cycle Command Execution Log</h3>
+      <div class="table-box">
+        <table id="hist">
+          <thead>
+            <tr><th>#</th><th>Command</th><th>State After</th><th>Balance</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card-panel">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="margin: 0;">📟 Simulator Standard Output (VVP)</h3>
+        <a href="/api/vcd" class="nav-btn" style="font-size: 11px; padding: 4px 10px;">
+          📥 Download Waveform (session.vcd)
+        </a>
+      </div>
+      <pre id="raw"></pre>
+    </div>
+  </section>
+</main>
+
+<script>
+let CFG = null, S = null, HIST = [], ROWS = [], RAW = '';
+let buf = '', mode = null, lastTxn = null;
+const $ = id => document.getElementById(id);
+
+async function api(path, body) {
+  const r = await fetch(path, body ? {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)} : {});
+  return r.json();
+}
+
+function showError(msg) {
+  const e = $('error');
+  e.style.display = msg ? 'block' : 'none';
+  e.textContent = msg || '';
+}
+
+async function send(cmd, a=0, b=0) {
+  const r = await api('/api/cmd', {cmd, a, b});
+  if (!r.ok) { showError(r.error); return; }
+  showError('');
+  S = r.state; HIST = r.history; ROWS = r.rows; RAW = r.raw;
+  render();
+}
+
+function doReset() {
+  buf = ''; mode = null; lastTxn = null;
+  send('RESET');
+}
+
+function stateName() {
+  if (!CFG || !S) return 'UNKNOWN';
+  return CFG.state_names[String(S.state)] || ('STATE_' + S.state);
+}
+
+function render() {
+  const st = stateName();
+  const scr = $('screen'), ctl = $('controls');
+  let h = '', c = '';
+
+  const key = () => `<div class="keypad">` +
+    [1,2,3,4,5,6,7,8,9].map(n => `<button onclick="kp(${n})">${n}</button>`).join('') +
+    `<button class="stop" onclick="kclr()">Clear</button><button onclick="kp(0)">0</button><button class="go" id="enter" onclick="kenter()">Enter</button></div>`;
+
+  if (st === 'IDLE') {
+    $('slot-status').textContent = 'CARD EJECTED';
+    $('slot-status').style.color = '#94a3b8';
+    h = `<h2>WELCOME TO VERILOG ATM</h2><div class="msg">Please insert your smart card to initiate hardware verification.</div>`;
+    c = `<div class="row"><button class="go" style="width: 100%;" onclick="send('CARD')">💳 Insert Card</button></div>`;
+  } else if (st === 'PIN_ENTRY') {
+    $('slot-status').textContent = 'CARD ENGAGED';
+    $('slot-status').style.color = '#38bdf8';
+    const left = Math.max(0, 3 - S.attempts);
+    h = `<h2>ENTER PIN</h2>
+         <div class="msg">Enter 4-digit PIN (Demo: 1234).</div>
+         ${S.err ? `<div class="msg err">Incorrect PIN! Attempts left: ${left}</div>` : ''}
+         <div class="entry">${'●'.repeat(buf.length).padEnd(4, '○')}</div>`;
+    c = key() + `<div class="row"><button class="stop" style="width: 100%;" onclick="eject()">Cancel &amp; Eject Card</button></div>`;
+  } else if (st === 'ACCOUNT_SELECT') {
+    $('slot-status').textContent = 'AUTHENTICATED';
+    $('slot-status').style.color = '#10b981';
+    h = `<h2>ACCOUNT SELECTION</h2><div class="msg">PIN verified by hardware. Select bank register:</div>`;
+    c = `<div class="row" style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+           <button class="alt" onclick="send('ACC',0)">Primary Account (0)</button>
+           <button class="alt" onclick="send('ACC',1)">Savings Account (1)</button>
+           <button class="alt" onclick="send('ACC',2)">Checking Account (2)</button>
+           <button class="alt" onclick="send('ACC',3)">Reserve Account (3)</button>
+         </div>
+         <div class="row"><button class="stop" style="width: 100%;" onclick="eject()">Eject Card</button></div>`;
+  } else if (st === 'MENU') {
+    $('slot-status').textContent = 'ACTIVE SESSION';
+    if (mode) {
+      h = `<h2>${mode === 'withdraw' ? 'WITHDRAWAL' : 'DEPOSIT'}</h2>
+           <div class="msg">Enter amount in dollars, then press Enter:</div>
+           <div class="entry">$${buf || '0'}</div>`;
+      c = `<div class="row" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+             <button onclick="buf='100';render()">$100</button>
+             <button onclick="buf='500';render()">$500</button>
+             <button onclick="buf='1000';render()">$1000</button>
+           </div>` + key() +
+          `<div class="row"><button style="width: 100%;" onclick="mode=null;buf='';render()">Back to Main Menu</button></div>`;
+    } else {
+      h = `<h2>TRANSACTION MENU</h2><div class="msg">Hardware FSM is ready. Select an action:</div>`;
+      c = `<div class="row" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+             <button class="alt" onclick="lastTxn='balance';send('TXN',0,0)">Balance</button>
+             <button class="alt" onclick="mode='withdraw';buf='';render()">Withdraw</button>
+             <button class="alt" onclick="mode='deposit';buf='';render()">Deposit</button>
+           </div>
+           <div class="row"><button class="stop" style="width: 100%;" onclick="eject()">Eject Card</button></div>`;
+    }
+  } else if (st === 'BALANCE') {
+    h = `<h2>ACCOUNT BALANCE</h2><div class="msg">Verified Register Balance:</div><div class="big">$${Number(S.balance).toLocaleString()}</div>`;
+    c = backEject();
+  } else if (st === 'TXN_OK') {
+    h = `<h2>TRANSACTION APPROVED</h2>
+         <div class="msg">${lastTxn === 'deposit' ? 'Deposit' : 'Withdrawal'} committed to Verilog registers.<br>Updated Balance:</div>
+         <div class="big">$${Number(S.balance).toLocaleString()}</div>`;
+    c = backEject();
+  } else if (st === 'INSUFFICIENT') {
+    h = `<h2>INSUFFICIENT FUNDS</h2>
+         <div class="msg warn">Amount exceeds register balance.<br>Current Balance: $${Number(S.balance).toLocaleString()}</div>`;
+    c = backEject();
+  } else if (st === 'LOCKED') {
+    $('slot-status').textContent = 'CARD RETAINED / LOCKED';
+    $('slot-status').style.color = '#ef4444';
+    h = `<h2>HARDWARE LOCKED</h2>
+         <div class="msg err">Too many incorrect PIN attempts.<br>Card locked by safety logic.<br><br>Press "Reset Simulation" above to unlock.</div>`;
+    c = `<div class="row"><button class="go" style="width:100%;" onclick="doReset()">Reset Simulation</button></div>`;
+  } else {
+    h = `<h2>${st}</h2><div class="msg">State code: ${S.state}</div>`;
+  }
+
+  scr.innerHTML = h;
+  ctl.innerHTML = c;
+  renderSide(st);
+}
+
+function backEject() {
+  return `<div class="row" style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button class="go" onclick="send('BACK')">Back to Menu</button>
+            <button class="stop" onclick="eject()">Eject Card</button>
+          </div>`;
+}
+
+function eject() {
+  buf = ''; mode = null;
+  send('CANCEL');
+}
+
+function kp(n) {
+  const isPin = (stateName() === 'PIN_ENTRY');
+  if (isPin && buf.length < 4) {
+    buf += n; render();
+  } else if (!isPin && buf.length < 5) {
+    buf += n; render();
+  }
+}
+
+function kclr() {
+  buf = ''; render();
+}
+
+function kenter() {
+  const st = stateName();
+  if (st === 'PIN_ENTRY') {
+    if (buf.length !== 4) return;
+    const v = parseInt(buf, 16);
+    buf = '';
+    send('PIN', v, 0);
+  } else if (st === 'MENU' && mode) {
+    const amt = parseInt(buf || '0', 10);
+    if (amt <= 0) return;
+    if (mode === 'deposit' && (S.balance + amt > 65535)) {
+      showError('Deposit exceeds 16-bit register limit (65535 max).');
+      return;
+    }
+    lastTxn = mode;
+    const t = mode === 'withdraw' ? 1 : 2;
+    buf = ''; mode = null;
+    send('TXN', t, amt);
+  }
+}
+
+function renderSide(st) {
+  const sig = (name, val, active, isWarn=false) => 
+    `<div class="sig ${active ? (isWarn ? 'warn-on' : 'on') : ''}">
+      <b>${name}</b>
+      <span>${val}</span>
+    </div>`;
+
+  $('sigs').innerHTML =
+    sig('state', `${S.state} (${st})`, true) +
+    sig('auth_ok', S.auth ? '1 (HIGH)' : '0 (LOW)', S.auth) +
+    sig('pin_error', S.err ? '1 (FAIL)' : '0 (OK)', S.err, true) +
+    sig('attempts', `${S.attempts} / 3`, S.attempts > 0, S.attempts >= 2) +
+    sig('locked', S.locked ? '1 (LOCKED)' : '0 (CLEAR)', S.locked, true) +
+    sig('balance', `$${S.balance}`, true) +
+    sig('txn_success', S.ok ? '1 (PULSE)' : '0', S.ok) +
+    sig('insufficient', S.insuf ? '1 (TRIPPED)' : '0', S.insuf, true);
+
+  const tb = document.querySelector('#hist tbody');
+  tb.innerHTML = HIST.map((c, i) => {
+    const r = ROWS[i + 1] || {};
+    const nm = CFG.state_names[String(r.state)] || r.state;
+    return `<tr>
+      <td>${i + 1}</td>
+      <td><b>${c.cmd}</b> ${c.a} ${c.b}</td>
+      <td>${nm}</td>
+      <td style="color:#34d399;">$${r.balance !== undefined ? r.balance : '-'}</td>
+    </tr>`;
+  }).reverse().join('');
+
+  $('raw').textContent = RAW;
+}
+
+// Keyboard shortcuts for physical keyboard
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key >= '0' && e.key <= '9') {
+    kp(parseInt(e.key, 10));
+  } else if (e.key === 'Enter') {
+    kenter();
+  } else if (e.key === 'Backspace' || e.key === 'Delete') {
+    kclr();
+  } else if (e.key === 'Escape') {
+    eject();
+  }
+});
+
+(async function init() {
+  CFG = await api('/api/config');
+  const b = $('backend');
+  const isV = CFG.backend === 'verilog';
+  b.innerHTML = `<span class="pulse-dot"></span><span>${isV ? 'Icarus Verilog Simulation' : 'Python Model (Mock)'}</span>`;
+  if (!isV) b.classList.add('mock');
+
+  const r = await api('/api/state');
+  if (!r.ok) { showError(r.error); return; }
+  S = r.state; HIST = r.history; ROWS = r.rows; RAW = r.raw;
+  render();
+})();
+</script>
+</body>
+</html>

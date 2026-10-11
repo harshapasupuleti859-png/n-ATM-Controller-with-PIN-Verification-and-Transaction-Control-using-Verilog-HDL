@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verilog ATM Bank — Full-Stack Hardware Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #080c15;
+  --bg-card: rgba(17, 24, 39, 0.75);
+  --bg-card-hover: rgba(23, 32, 51, 0.85);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-accent: rgba(59, 130, 246, 0.35);
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --text-faint: #64748b;
+  --accent-blue: #3b82f6;
+  --accent-cyan: #06b6d4;
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-rose: #f43f5e;
+  --terminal-bg: #050811;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-primary);
+  background-image: 
+    radial-gradient(circle at 15% 10%, rgba(59, 130, 246, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.04) 0%, transparent 60%);
+  background-attachment: fixed;
+  color: var(--text-main);
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Header & Nav */
+header {
+  background: rgba(8, 12, 21, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 14px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: #fff;
+}
+
+.brand-icon {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+
+.brand-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(to right, #fff, #93c5fd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nav-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.2s ease;
+}
+
+.nav-link-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.nav-link-btn.active {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: var(--accent-blue);
+  color: #93c5fd;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.badge.mock {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+/* Main Container */
+main {
+  max-width: 1140px;
+  margin: 28px auto;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Glass Card */
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.2s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Demo Pills Banner */
+.demo-banner {
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.08), rgba(6, 182, 212, 0.08));
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.demo-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #93c5fd;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.demo-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.demo-pill {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.demo-pill:hover {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: var(--accent-blue);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.btn-reset-demo {
+  background: transparent;
+  border: 1px dashed rgba(244, 63, 94, 0.4);
+  color: #fda4af;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-reset-demo:hover {
+  background: rgba(244, 63, 94, 0.15);
+  border-color: var(--accent-rose);
+  color: #fff;
+}
+
+/* Grids */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 820px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Forms & Inputs */
+.form-group {
+  margin-bottom: 16px;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(5, 8, 17, 0.7);
+  color: #fff;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s;
+}
+
+input:focus {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+input::placeholder {
+  color: var(--text-faint);
+}
+
+.input-icon-wrapper {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-faint);
+  font-size: 14px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 0;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
+}
+
+.btn-emerald {
+  background: linear-gradient(135deg, #059669, #047857);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+}
+.btn-emerald:hover {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 6px 18px rgba(5, 150, 105, 0.45);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #e11d48, #be123c);
+  color: #fff;
+}
+.btn-danger:hover {
+  background: linear-gradient(135deg, #f43f5e, #e11d48);
+}
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+}
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+/* Feedback Messages */
+.msg-box {
+  min-height: 24px;
+  margin-top: 12px;
+  font-size: 13px;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+.msg-box.visible { display: flex; }
+.msg-box.error { background: rgba(244, 63, 94, 0.12); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.25); }
+.msg-box.success { background: rgba(16, 185, 129, 0.12); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.25); }
+.msg-box.warn { background: rgba(245, 158, 11, 0.12); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.25); }
+
+/* Virtual Debit Card */
+.virtual-card {
+  background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 50%, #022c22 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 18px;
+  padding: 24px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+}
+
+.virtual-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.card-network {
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: 0.1em;
+  color: #38bdf8;
+}
+
+.emv-chip {
+  width: 44px;
+  height: 32px;
+  background: linear-gradient(135deg, #fbbf24, #d97706);
+  border-radius: 6px;
+  position: relative;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4);
+  border: 1px solid #b45309;
+}
+.emv-chip::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(0,0,0,0.3);
+}
+
+.card-number {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  letter-spacing: 3px;
+  margin-bottom: 20px;
+  color: #e2e8f0;
+}
+
+.card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.card-holder-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.08em;
+}
+
+.card-holder-name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.card-balance-box {
+  text-align: right;
+}
+
+.card-balance-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.08em;
+}
+
+.card-balance-value {
+  font-size: 28px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  color: #34d399;
+  letter-spacing: -0.02em;
+}
+
+/* Quick Cash Buttons */
+.quick-cash-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 12px 0 16px;
+}
+
+.quick-cash-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quick-cash-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: var(--accent-blue);
+  color: #fff;
+}
+
+.action-buttons-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* Terminal / Verilog Output */
+.terminal-window {
+  background: var(--terminal-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.terminal-header {
+  background: #090e1a;
+  padding: 8px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.terminal-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.terminal-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.dot-red { background: #ef4444; }
+.dot-yellow { background: #f59e0b; }
+.dot-green { background: #10b981; }
+
+.terminal-title {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+pre#sim {
+  padding: 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: #a5f3fc;
+  max-height: 250px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.state-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* Transactions Table */
+.table-responsive {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+th {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px 14px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--text-main);
+}
+
+tr:last-child td {
+  border-bottom: 0;
+}
+
+tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.kind-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.kind-deposit { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
+.kind-withdraw { background: rgba(59, 130, 246, 0.15); color: #93c5fd; }
+.kind-balance { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; }
+
+.result-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+.result-ok { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
+.result-insuf { background: rgba(244, 63, 94, 0.15); color: #fda4af; }
+.result-balance { background: rgba(6, 182, 212, 0.15); color: #67e8f9; }
+
+.hide { display: none !important; }
+
+/* Micro Tooltip */
+.hint-text {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-top: 6px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="brand">
+    <div class="brand-icon">🏧</div>
+    <div>
+      <div class="brand-title">VERILOG BANK</div>
+      <div class="brand-subtitle">Hardware-Verified Core</div>
+    </div>
+  </a>
+
+  <div class="nav-actions">
+    <a href="/" class="nav-link-btn active">🏦 Bank Web Portal</a>
+    <a href="/atm" class="nav-link-btn" title="Open Interactive Verilog ATM Console">💻 Hardware ATM Console</a>
+    <span id="backend-badge" class="badge">
+      <span class="pulse-dot"></span>
+      <span id="backend-text">Verilog Engine</span>
+    </span>
+    <button id="out-btn" class="btn btn-danger btn-ghost hide" onclick="logout()" style="padding: 6px 14px; font-size: 13px;">Sign Out</button>
+  </div>
+</header>
+
+<main>
+  <!-- Demo Quick Fill Bar -->
+  <div class="demo-banner">
+    <div class="demo-title">
+      <span>⚡ Quick Demo Credentials:</span>
+    </div>
+    <div class="demo-pills">
+      <button class="demo-pill" onclick="fillDemo('1001', '1234')">
+        👤 Asha (Card: <strong>1001</strong> · PIN: <strong>1234</strong> · $1,000)
+      </button>
+      <button class="demo-pill" onclick="fillDemo('1002', '4321')">
+        👤 Ravi (Card: <strong>1002</strong> · PIN: <strong>4321</strong> · $2,500)
+      </button>
+      <button class="btn-reset-demo" onclick="resetDemoAccounts()" title="Unlocks 1001/1002 if locked after 3 wrong PINs">
+        🔄 Reset Demo Accounts
+      </button>
+    </div>
+  </div>
+
+  <!-- AUTH VIEW -->
+  <div id="auth-view" class="grid-2">
+    <!-- Sign In Card -->
+    <div class="glass-card">
+      <div class="section-header">
+        <h2 class="section-title">💳 Insert Card &amp; Sign In</h2>
+        <span class="state-badge">STATE: PIN_ENTRY</span>
+      </div>
+
+      <div class="form-group">
+        <label for="card">Card Number</label>
+        <div class="input-icon-wrapper">
+          <input id="card" placeholder="e.g. 1001" inputmode="numeric" autocomplete="username">
+          <span class="input-icon">💳</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="pin">4-Digit Hardware PIN</label>
+        <div class="input-icon-wrapper">
+          <input id="pin" type="password" maxlength="4" placeholder="••••" inputmode="numeric" autocomplete="current-password">
+          <span class="input-icon">🔒</span>
+        </div>
+        <p class="hint-text">Verified cycle-by-cycle inside the Verilog FSM. 3 wrong attempts will trip hardware lock.</p>
+      </div>
+
+      <button id="btn-login" class="btn btn-primary btn-block" onclick="login()">
+        <span>Verify PIN &amp; Enter</span>
+      </button>
+
+      <div id="amsg" class="msg-box"></div>
+    </div>
+
+    <!-- Register Card -->
+    <div class="glass-card">
+      <div class="section-header">
+        <h2 class="section-title">✨ Open New Account</h2>
+        <span class="state-badge">SQLite + RTL</span>
+      </div>
+
+      <div class="form-group">
+        <label for="rname">Account Holder Name</label>
+        <input id="rname" placeholder="Full Name (e.g. Harsha Vardhan)">
+      </div>
+
+      <div class="form-group">
+        <label for="rpin">Create 4-Digit PIN</label>
+        <input id="rpin" type="password" maxlength="4" placeholder="e.g. 5678" inputmode="numeric">
+      </div>
+
+      <div class="form-group">
+        <label for="rbal">Initial Deposit Amount ($)</label>
+        <input id="rbal" type="number" min="0" max="65535" value="1000" placeholder="1000">
+      </div>
+
+      <button class="btn btn-emerald btn-block" onclick="reg()">
+        <span>Open Account &amp; Generate Card</span>
+      </button>
+
+      <div id="rmsg" class="msg-box"></div>
+    </div>
+  </div>
+
+  <!-- APP VIEW (LOGGED IN) -->
+  <div id="app-view" class="hide">
+    <div class="grid-2">
+      <!-- Left: Debit Card & Controls -->
+      <div class="glass-card">
+        <div class="section-header">
+          <h2 class="section-title">🏧 Account Operations</h2>
+          <span id="fsm-badge" class="state-badge">FSM: MENU</span>
+        </div>
+
+        <!-- Virtual Card Graphic -->
+        <div class="virtual-card">
+          <div class="card-top">
+            <span class="card-network">VERILOG PAY</span>
+            <div class="emv-chip"></div>
+          </div>
+          <div class="card-number" id="card-display">•••• •••• •••• 1001</div>
+          <div class="card-bottom">
+            <div>
+              <div class="card-holder-label">Cardholder</div>
+              <div class="card-holder-name" id="name-display">ASHA</div>
+            </div>
+            <div class="card-balance-box">
+              <div class="card-balance-label">Hardware Balance</div>
+              <div class="card-balance-value">$<span id="bal">0</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+          <label for="amt">Transaction Amount ($)</label>
+          <input id="amt" type="number" min="1" max="65535" placeholder="Enter amount or pick below">
+
+          <div class="quick-cash-row">
+            <button class="quick-cash-btn" onclick="setAmt(20)">$20</button>
+            <button class="quick-cash-btn" onclick="setAmt(50)">$50</button>
+            <button class="quick-cash-btn" onclick="setAmt(100)">$100</button>
+            <button class="quick-cash-btn" onclick="setAmt(500)">$500</button>
+          </div>
+
+          <div class="action-buttons-row">
+            <button class="btn btn-primary" onclick="tx('withdraw')">
+              <span>Withdraw</span>
+            </button>
+            <button class="btn btn-emerald" onclick="tx('deposit')">
+              <span>Deposit</span>
+            </button>
+            <button class="btn btn-ghost" onclick="tx('balance')">
+              <span>Check Bal</span>
+            </button>
+          </div>
+
+          <div id="tmsg" class="msg-box"></div>
+        </div>
+      </div>
+
+      <!-- Right: Verilog Simulation Bus Monitor -->
+      <div class="glass-card">
+        <div class="section-header">
+          <h2 class="section-title">🔬 Live Verilog Bus Monitor</h2>
+          <a href="/api/vcd" class="nav-link-btn" style="font-size: 11px; padding: 4px 8px;">
+            📥 Download .VCD Waveform
+          </a>
+        </div>
+
+        <div class="terminal-window">
+          <div class="terminal-header">
+            <div class="terminal-dots">
+              <span class="terminal-dot dot-red"></span>
+              <span class="terminal-dot dot-yellow"></span>
+              <span class="terminal-dot dot-green"></span>
+            </div>
+            <span class="terminal-title">tb_bridge.v &lt;-&gt; atm_top.v ($display)</span>
+          </div>
+          <pre id="sim">Waiting for Verilog transaction execution...</pre>
+        </div>
+
+        <div style="margin-top: 14px; font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center;">
+          <span>Cycles simulated on Icarus Verilog</span>
+          <a href="/atm" style="color: #67e8f9; text-decoration: none; font-weight: 600;">Open Full ATM Keypad &rarr;</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transaction History -->
+    <div class="glass-card" style="margin-top: 10px;">
+      <div class="section-header">
+        <h2 class="section-title">📜 Transaction Audit Ledger (SQLite + Verilog Decided)</h2>
+        <span id="history-count" class="state-badge">0 Transactions</span>
+      </div>
+
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Operation</th>
+              <th>Amount</th>
+              <th>Hardware Decision</th>
+              <th>Ledger Balance</th>
+            </tr>
+          </thead>
+          <tbody id="hist">
+            <tr><td colspan="5" style="text-align:center; color: var(--text-faint);">No transactions recorded yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+let TOKEN = localStorage.getItem('tok') || '';
+const $ = id => document.getElementById(id);
+
+function say(id, ok, text) {
+  const el = $(id);
+  if (!text) {
+    el.className = 'msg-box';
+    el.textContent = '';
+    return;
+  }
+  el.className = 'msg-box visible ' + (ok ? 'success' : 'error');
+  el.textContent = text;
+}
+
+async function api(path, body) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
+  try {
+    const res = await fetch(path, {
+      method: body ? 'POST' : 'GET',
+      headers,
+      body: body ? JSON.stringify(body) : undefined
+    });
+    const data = await res.json().catch(() => ({}));
+    return [res.ok, data, res.status];
+  } catch (err) {
+    return [false, { error: 'Network connection failed: ' + err.message }, 0];
+  }
+}
+
+function fillDemo(card, pin) {
+  $('card').value = card;
+  $('pin').value = pin;
+  say('amsg', true, `Demo credentials filled: Card ${card} / PIN ${pin}. Press 'Verify PIN & Enter' to proceed.`);
+}
+
+function setAmt(val) {
+  $('amt').value = val;
+}
+
+async function resetDemoAccounts() {
+  const [ok, data] = await api('/api/reset-account', {});
+  if (ok) {
+    alert('Demo accounts (1001 & 1002) have been unlocked and restored!');
+    fillDemo('1001', '1234');
+  } else {
+    alert('Error: ' + (data.error || 'Failed to reset'));
+  }
+}
+
+async function login() {
+  const card = $('card').value.trim();
+  const pin = $('pin').value.trim();
+  if (!card) return say('amsg', false, 'Please enter your card number.');
+  if (!pin || pin.length !== 4) return say('amsg', false, 'Please enter a 4-digit numeric PIN.');
+
+  const [ok, data] = await api('/api/login', { card, pin });
+  if (!ok) {
+    if (data.sim) $('sim').textContent = data.sim;
+    return say('amsg', false, data.error || 'Login rejected by hardware.');
+  }
+
+  TOKEN = data.token;
+  localStorage.setItem('tok', TOKEN);
+  if (data.sim) $('sim').textContent = data.sim;
+  show();
+}
+
+async function reg() {
+  const name = $('rname').value.trim();
+  const pin = $('rpin').value.trim();
+  const initial_bal = parseInt($('rbal').value, 10) || 0;
+
+  if (!name) return say('rmsg', false, 'Please provide an account holder name.');
+  if (!pin || pin.length !== 4) return say('rmsg', false, 'PIN must be exactly 4 digits.');
+
+  const [ok, data] = await api('/api/register', { name, pin, initial_bal });
+  if (!ok) return say('rmsg', false, data.error || 'Registration failed.');
+
+  say('rmsg', true, `Account opened! Your Card Number is ${data.card}. You can now sign in.`);
+  $('card').value = data.card;
+  $('pin').value = pin;
+  $('rname').value = '';
+  $('rpin').value = '';
+}
+
+async function show() {
+  const [ok, data] = await api('/api/me');
+  if (!ok) {
+    TOKEN = '';
+    localStorage.removeItem('tok');
+    $('auth-view').classList.remove('hide');
+    $('app-view').classList.add('hide');
+    $('out-btn').classList.add('hide');
+    return;
+  }
+
+  $('auth-view').classList.add('hide');
+  $('app-view').classList.remove('hide');
+  $('out-btn').classList.remove('hide');
+
+  $('name-display').textContent = data.name || 'ACCOUNT HOLDER';
+  $('card-display').textContent = `•••• •••• •••• ${data.card}`;
+  $('bal').textContent = Number(data.balance).toLocaleString();
+
+  const history = data.history || [];
+  $('history-count').textContent = `${history.length} Record${history.length === 1 ? '' : 's'}`;
+
+  if (history.length === 0) {
+    $('hist').innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--text-faint);">No transactions recorded yet.</td></tr>`;
+  } else {
+    $('hist').innerHTML = history.map(h => {
+      const kindClass = 'kind-' + (h.kind || 'balance');
+      const isOk = h.result === 'OK' || h.result === 'BALANCE';
+      const resClass = h.result === 'INSUFFICIENT' ? 'result-insuf' : (h.result === 'BALANCE' ? 'result-balance' : 'result-ok');
+      return `
+        <tr>
+          <td style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">${h.ts}</td>
+          <td><span class="kind-badge ${kindClass}">${h.kind}</span></td>
+          <td style="font-family: var(--font-mono); font-weight: 700;">$${Number(h.amount).toLocaleString()}</td>
+          <td><span class="result-badge ${resClass}">${h.result}</span></td>
+          <td style="font-family: var(--font-mono); color: #34d399; font-weight: 700;">$${Number(h.balance_after).toLocaleString()}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+}
+
+async function tx(type) {
+  const amtInput = $('amt').value;
+  const amt = parseInt(amtInput, 10) || 0;
+
+  if (type !== 'balance' && amt <= 0) {
+    return say('tmsg', false, 'Please enter a valid amount greater than $0.');
+  }
+
+  const [ok, data] = await api('/api/txn', { type, amount: amt });
+  if (!ok) {
+    return say('tmsg', false, data.error || 'Transaction failed');
+  }
+
+  if (data.sim) $('sim').textContent = data.sim;
+  if (data.state_name) $('fsm-badge').textContent = `FSM: ${data.state_name}`;
+
+  const isSuccess = data.result === 'OK' || data.result === 'BALANCE';
+  const msgMap = {
+    'OK': `Transaction approved by hardware: ${type.toUpperCase()} $${amt}.`,
+    'BALANCE': `Current verified balance: $${Number(data.balance).toLocaleString()}.`,
+    'INSUFFICIENT': 'Insufficient funds! Hardware FSM transitioned to INSUFF state (rejected).'
+  };
+  say('tmsg', isSuccess, msgMap[data.result] || `Result: ${data.result}`);
+  $('amt').value = '';
+  show();
+}
+
+async function logout() {
+  await api('/api/logout', {});
+  TOKEN = '';
+  localStorage.removeItem('tok');
+  location.reload();
+}
+
+// Init config badge & check session
+(async function init() {
+  const [ok, cfg] = await api('/api/config');
+  if (ok && cfg.backend) {
+    const isV = cfg.backend === 'verilog';
+    $('backend-text').textContent = isV ? 'Icarus Verilog RTL' : 'Python Behavioral Mock';
+    $('backend-badge').className = 'badge ' + (isV ? '' : 'mock');
+  }
+  if (TOKEN) {
+    show();
+  }
+})();
+</script>
+</body>
+</html>

@@ -15,11 +15,19 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import server as S
 
-DB = os.path.join(S.ROOT, "bank.db")
+DB = "/tmp/bank.db" if os.environ.get("VERCEL") else os.environ.get("BANK_DB", os.path.join(S.ROOT, "bank.db"))
 SESSIONS = {}                      # token -> card number
 SIM = None                         # Verilog (or mock) backend
 SESSION = None                     # Hardware interactive session
 SIM_LOCK = threading.Lock()        # Prevent race conditions in sim/session.cmd
+
+
+def ensure_sim(mode="auto"):
+    global SIM, SESSION
+    if SIM is None:
+        SIM = S.make_backend(mode)
+        SESSION = S.Session(SIM)
+        init_db()
 
 
 def db():
@@ -217,6 +225,7 @@ class H(BaseHTTPRequestHandler):
         return SESSIONS.get(token)
 
     def do_GET(self):
+        ensure_sim()
         path = self.path.split("?")[0]
         # REST APIs
         if path == "/api/me":
@@ -267,6 +276,7 @@ class H(BaseHTTPRequestHandler):
         self.out(404, {"error": f"Endpoint or file '{path}' not found"})
 
     def do_POST(self):
+        ensure_sim()
         content_len = self.headers.get("Content-Length")
         raw_body = self.rfile.read(int(content_len)) if content_len else b"{}"
         try:

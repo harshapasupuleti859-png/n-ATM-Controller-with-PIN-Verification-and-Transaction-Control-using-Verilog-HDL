@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/atm",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/",
+      "destination": "/bank.html"
+    },
+    {
+      "source": "/bank",
+      "destination": "/bank.html"
+    }
+  ]
+}
