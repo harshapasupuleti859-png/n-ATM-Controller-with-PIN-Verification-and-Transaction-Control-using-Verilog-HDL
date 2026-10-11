@@ -397,3 +397,44 @@ Through this project, the following concepts are practiced:
 10. Debugging and validating digital designs using simulation tools such as Icarus Verilog and EDA Playground.
 11. Applying RTL design practices that support future FPGA implementation.
 12. Understanding how hardware modules can be extended into a complete hardware-software ATM system.
+
+---
+
+## 🌐 Full-Stack Web Interface & Deployment (`atm_fullstack`)
+
+The repository includes a full-stack web front-end and REST API under [`atm_fullstack/`](./atm_fullstack) that connects directly to the Verilog controller via Icarus Verilog (`iverilog` / `vvp`).
+
+### ✨ Full-Stack Features
+* **Web Banking Portal** (`/`): User sign-in, account creation, live balance check, deposit, withdrawal, transaction history ledger, and live Verilog bus monitor.
+* **Virtual ATM Hardware Console** (`/atm`): Physical ATM simulator with LCD screen, 4x4 keypad, card slot, and real-time hardware pin monitoring (`state`, `auth`, `locked`, `attempts`, `balance`, `ok`, `insuf`).
+* **Hardware Backed**: All PIN validations, account locks (3 attempts), balance queries, withdrawals, and deposits are computed by the Verilog RTL simulation.
+* **Database Persistence**: SQLite database stores accounts and transaction history.
+
+### 🚀 Quick Start (Local)
+```bash
+cd atm_fullstack
+python3 app.py
+# Open http://localhost:8000 in your browser
+```
+Demo Accounts:
+* Card: `1001` · PIN: `1234` ($1,000 balance)
+* Card: `1002` · PIN: `4321` ($2,500 balance)
+
+### 🐳 Deployment via Docker
+Run with Docker Compose:
+```bash
+cd atm_fullstack
+docker compose up -d --build
+```
+Or build and run the Docker container directly:
+```bash
+cd atm_fullstack
+docker build -t atm-controller-bank .
+docker run -p 8000:8000 atm-controller-bank
+```
+
+### 🧪 Run Test Suite
+```bash
+cd atm_fullstack
+python3 tests/test_scenarios.py
+```

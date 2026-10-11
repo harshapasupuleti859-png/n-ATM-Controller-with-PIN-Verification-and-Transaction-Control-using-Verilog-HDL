@@ -1,0 +1,21 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Simulation intermediate & waveform files
+sim/atm.vvp
+sim/session.cmd
+sim/session.vcd
+
+# Local database runtime
+bank.db
+
+# Environment & IDE
+.vscode/
+.idea/
+*.swp

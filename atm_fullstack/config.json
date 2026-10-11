@@ -1,0 +1,17 @@
+{
+  "iverilog": "iverilog",
+  "vvp": "vvp",
+  "rtl_glob": "rtl/*.v",
+  "testbench": "sim/tb_bridge.v",
+  "port": 8000,
+  "state_names": {
+    "0": "IDLE",
+    "1": "PIN_ENTRY",
+    "2": "ACCOUNT_SELECT",
+    "3": "MENU",
+    "4": "BALANCE",
+    "5": "TXN_OK",
+    "6": "INSUFFICIENT",
+    "7": "LOCKED"
+  }
+}

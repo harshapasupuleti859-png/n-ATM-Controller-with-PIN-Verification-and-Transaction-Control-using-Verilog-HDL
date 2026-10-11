@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+sim/atm.vvp
+sim/session.cmd
+sim/session.vcd
+.git/
+.vscode/

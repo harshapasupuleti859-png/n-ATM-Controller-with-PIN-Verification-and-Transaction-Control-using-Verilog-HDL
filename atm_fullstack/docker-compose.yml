@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  atm-bank:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: atm-controller-bank
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+    volumes:
+      # Persist SQLite database across container restarts
+      - atm-db-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  atm-db-data:
