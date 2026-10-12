@@ -1,440 +1,243 @@
-# ATM Controller using Verilog HDL
+# ATM Controller with PIN Verification and Transaction Control using Verilog HDL
 
-A modular **ATM Controller designed using Verilog HDL**, implementing PIN authentication, account selection, balance management, withdrawal, deposit, insufficient-funds handling, transaction control, and account locking.
+This repository contains a modular Verilog-based ATM controller and a full-stack web banking demo that connects the hardware simulation to a browser UI. The project combines digital design, HDL verification, and a Python web application to demonstrate a realistic ATM workflow.
 
-The project is designed with a **modular RTL architecture**, making it easier to simulate, verify, debug, and extend toward FPGA-based implementation.
+## Overview
 
----
+The core hardware design is implemented in the `ATM_Controller/` directory and models a complete ATM state machine with:
 
-## 📌 Project Overview
+- PIN verification
+- account selection
+- balance inquiry
+- withdrawal and deposit logic
+- insufficient-funds handling
+- account lockout after repeated wrong PIN attempts
+- FSM-based transaction flow
 
-This project models the control logic of an Automated Teller Machine (ATM) using **Verilog HDL**.
+In addition to the RTL design, the repository includes a Python-based full-stack application in `atm_fullstack/` that:
 
-The design separates major ATM operations into independent RTL modules such as:
-
-* PIN verification
-* Account management
-* Balance management
-* Transaction control
-* ATM state-machine control
-* Top-level system integration
-
-The modular approach improves **design readability, reusability, verification, and scalability**.
-
----
-
-## ✨ Features
-
-* 🔐 4-digit PIN authentication
-* 🚫 Invalid PIN detection
-* 🔒 Account lock after multiple incorrect PIN attempts
-* 👤 Account selection
-* 💰 Balance inquiry
-* 💵 Cash withdrawal
-* 💳 Deposit functionality
-* ⚠️ Insufficient funds detection
-* 🔄 Transaction control
-* 🧠 FSM-based ATM operation
-* 🧩 Modular RTL architecture
-* 🧪 Verilog testbench for functional verification
-* 📈 Designed with future FPGA implementation in mind
+- serves a banking portal and ATM simulator UI
+- stores accounts and transaction history in SQLite
+- calls the Verilog simulation through Icarus Verilog / `vvp`
+- exposes REST APIs for login, registration, balance queries, and transactions
+- supports local execution and deployment via Docker, Render, and Vercel
 
 ---
 
-## 🏗️ System Architecture
+## Features
+
+### Hardware / Verilog Features
+
+- 4-digit PIN authentication
+- invalid PIN detection
+- lock-after-3-attempts logic
+- account selection support
+- balance inquiry
+- withdrawal and deposit operations
+- insufficient-funds detection
+- modular RTL architecture
+- FSM-driven transaction processing
+- testbench validation for functional simulation
+
+### Software / Full-Stack Features
+
+- browser-based banking dashboard
+- virtual ATM hardware console
+- live simulation status and state reporting
+- SQLite-backed accounts and transaction ledger
+- REST API endpoints for account operations
+- Docker-ready deployment
+- cloud deployment configuration via Render and Vercel
+
+---
+
+## Repository Structure
 
 ```text
-                    +----------------------+
-                    |      ATM Top         |
-                    |     atm_top.v        |
-                    +----------+-----------+
-                               |
-        +----------------------+----------------------+
-        |                      |                      |
-        v                      v                      v
-+---------------+     +----------------+     +---------------------+
-| PIN           |     | Account        |     | Transaction         |
-| Verification  |     | Manager        |     | Controller          |
-+---------------+     +----------------+     +---------------------+
-        |                      |                      |
-        +----------------------+----------------------+
-                               |
-                               v
-                    +----------------------+
-                    |  Balance Manager     |
-                    | balance_manager.v    |
-                    +----------+-----------+
-                               |
-                               v
-                    +----------------------+
-                    |      ATM FSM         |
-                    |     atm_fsm.v        |
-                    +----------------------+
-```
-
----
-
-## 📂 Project Structure
-
-```text
-ATM_Controller/
-│
-├── rtl/
-│   ├── pin_verification.v
+.
+├── ATM_Controller/
 │   ├── account_manager.v
-│   ├── balance_manager.v
-│   ├── transaction_controller.v
 │   ├── atm_fsm.v
-│   └── atm_top.v
-│
-└── tb/
-    └── tb_atm_top.v
+│   ├── atm_top.v
+│   ├── balance_manager.v
+│   ├── pin_verification.v
+│   ├── tb_atm_top.v
+│   └── transaction_controller.v
+├── atm_fullstack/
+│   ├── app.py
+│   ├── config.json
+│   ├── docker-compose.yml
+│   ├── Dockerfile
+│   ├── README.md
+│   ├── run_mac_linux.sh
+│   ├── run_windows.bat
+│   ├── rtl/
+│   ├── sim/
+│   ├── server.py
+│   ├── tests/
+│   └── web/
+├── api/
+│   └── index.py
+├── public/
+│   ├── bank.html
+│   └── index.html
+├── Dockerfile
+├── render.yaml
+├── vercel.json
+├── README.md
+├── .gitignore
+└── .dockerignore
 ```
 
 ---
 
-## 🔧 Module Description
+## Hardware Design Modules
 
-### 1. `pin_verification.v`
+The RTL implementation is organized into the following modules:
 
-Handles user PIN authentication.
+### `pin_verification.v`
+Handles the PIN-entry process, comparison against a stored PIN, invalid-attempt counting, and lockout state.
 
-**Responsibilities:**
+### `account_manager.v`
+Controls account selection and validates the chosen account before continuing the session.
 
-* Accepts PIN digits sequentially
-* Compares the entered PIN with the stored PIN
-* Generates valid/invalid PIN status
-* Tracks incorrect attempts
-* Locks the account after the configured number of failed attempts
+### `balance_manager.v`
+Tracks the current balance and performs withdrawal and deposit updates while checking for insufficient funds.
 
----
+### `transaction_controller.v`
+Routes user transactions such as balance inquiry, withdrawal, and deposit to the appropriate control logic.
 
-### 2. `account_manager.v`
+### `atm_fsm.v`
+Implements the finite-state machine that orchestrates authentication, account selection, transaction execution, and error states.
 
-Handles account-selection logic after successful authentication.
+### `atm_top.v`
+Integrates the controller modules into one ATM system.
 
-**Responsibilities:**
-
-* Receives account-selection input
-* Confirms account selection
-* Provides account-selection status to the ATM controller
-
----
-
-### 3. `balance_manager.v`
-
-Manages the account balance and transaction amounts.
-
-**Responsibilities:**
-
-* Stores the current account balance
-* Processes withdrawals
-* Processes deposits
-* Detects insufficient funds
-* Generates transaction-success status
-
-Example:
-
-```text
-Initial Balance = 1000
-
-Withdrawal = 200
-
-Final Balance = 800
-```
+### `tb_atm_top.v`
+Contains the functional verification testbench used to simulate and validate the ATM controller.
 
 ---
 
-### 4. `transaction_controller.v`
+## Full-Stack Web App
 
-Controls the user's selected transaction.
+The `atm_fullstack/` folder contains a Python application that serves a full-stack ATM banking experience.
 
-Supported operations include:
+### Available interfaces
 
-```text
-00 → Balance Inquiry
-01 → Withdrawal
-10 → Deposit
-```
+- `/` or `/bank` -> banking portal
+- `/atm` -> hardware ATM simulator console
+- REST endpoints for login, registration, transactions, and session state
 
-The module generates the appropriate transaction request for the selected operation.
+### Demo accounts
 
----
+- Card: `1001` / PIN: `1234` / Balance: `$1000`
+- Card: `1002` / PIN: `4321` / Balance: `$2500`
 
-### 5. `atm_fsm.v`
+### Start locally
 
-Implements the main **Finite State Machine (FSM)** of the ATM.
-
-Typical system states include:
-
-```text
-IDLE
-  ↓
-PIN_ENTRY
-  ↓
-ACCOUNT_SELECTION
-  ↓
-MENU
-  ├── BALANCE
-  ├── WITHDRAW
-  └── DEPOSIT
-  ↓
-TRANSACTION COMPLETE
-```
-
-Additional states handle:
-
-```text
-INSUFFICIENT FUNDS
-ACCOUNT LOCKED
-```
-
----
-
-### 6. `atm_top.v`
-
-Acts as the top-level integration module.
-
-It connects:
-
-* PIN verification
-* Account management
-* Balance management
-* Transaction controller
-* ATM FSM
-
-into a single ATM system.
-
----
-
-### 7. `tb_atm_top.v`
-
-Provides functional verification of the ATM controller.
-
-The testbench generates:
-
-* Clock
-* Reset
-* PIN input
-* Account selection
-* Transaction selection
-* Withdrawal amount
-* Deposit amount
-
-and verifies the resulting outputs.
-
----
-
-## 🔄 ATM Operation Flow
-
-```text
-        +-------+
-        | IDLE  |
-        +---+---+
-            |
-            v
-     +-------------+
-     | Enter PIN   |
-     +------+------+
-            |
-       +----+----+
-       |         |
-     Valid     Invalid
-       |         |
-       v         v
-+-------------+  Retry
-| Select      |
-| Account     |
-+------+------+
-       |
-       v
-+-------------+
-| Transaction |
-| Menu        |
-+------+------+ 
-       |
-   +---+---+---+
-   |       |   |
-   v       v   v
-Balance Withdraw Deposit
-   |       |   |
-   +---+---+---+
-       |
-       v
-+-------------+
-| Transaction |
-| Complete    |
-+-------------+
-```
-
----
-
-## 🧪 Verification
-
-The testbench verifies major functional scenarios including:
-
-| Test Case                    | Expected Result                     |
-| ---------------------------- | ----------------------------------- |
-| Correct PIN                  | Authentication successful           |
-| Incorrect PIN                | Invalid PIN detected                |
-| Multiple incorrect PINs      | Account locked                      |
-| Account selection            | Account selected                    |
-| Balance inquiry              | Current balance displayed           |
-| Valid withdrawal             | Balance reduced                     |
-| Deposit                      | Balance increased                   |
-| Withdrawal exceeding balance | Insufficient funds                  |
-| Transaction completion       | System returns to appropriate state |
-
----
-
-## 🛠️ Tools & Technologies
-
-* **Verilog HDL**
-* **RTL Design**
-* **Finite State Machines**
-* **Digital Logic Design**
-* **Functional Verification**
-* **EDA Playground**
-* **Icarus Verilog**
-* **VS Code**
-
----
-
-## 🎯 Design Concepts Demonstrated
-
-This project demonstrates practical understanding of:
-
-* RTL design methodology
-* Modular hardware design
-* Sequential and combinational logic
-* Finite State Machines
-* Registers and counters
-* Control-path design
-* Data-path control
-* Input validation
-* Error handling
-* Hardware-oriented verification
-* Testbench development
-
----
-
-## 🚀 Future Enhancements
-
-The project can be extended toward a more complete FPGA-based ATM system.
-
-### Hardware-Level Enhancements
-
-* FPGA implementation
-* Matrix keypad interface
-* LCD/OLED display
-* Seven-segment display
-* Push-button interface
-* LED status indicators
-* Buzzer
-* UART communication
-
-### Security Enhancements
-
-* Configurable PIN storage
-* PIN change functionality
-* Improved authentication logic
-* Timeout mechanism
-* Transaction authorization
-* Multiple-account support
-
-### Software-Level Enhancements
-
-* Account database
-* Transaction history
-* Account creation
-* User management
-* Admin interface
-* Balance management software
-* Transaction reports
-
----
-
-## 📈 Future Architecture
-
-The long-term goal is to extend the project into a complete hardware-software ATM system:
-
-```text
-                 ATM SYSTEM
-                     |
-          +----------+----------+
-          |                     |
-          v                     v
-   FPGA / Hardware       Software Layer
-          |                     |
-     Keypad/LCD             Accounts
-     Controller             Database
-     FSM                    Transactions
-     Security               History
-     Balance                Reports
-          |                     |
-          +----------+----------+
-                     |
-                     v
-              Complete ATM
-                 System
-```
-
----
-
-## 📚 Learning Outcomes
-
-Through this project, the following concepts are practiced:
-
-1. Understanding modular RTL design and hardware architecture.
-2. Designing and integrating independent Verilog modules.
-3. Implementing finite state machines for real-world control systems.
-4. Using sequential and combinational logic to build reliable digital circuits.
-5. Managing registers, counters, control signals, and data paths.
-6. Designing PIN authentication and account-locking mechanisms.
-7. Implementing balance inquiry, withdrawal, deposit, and insufficient-funds handling.
-8. Developing transaction-control logic and coordinating system-level operations.
-9. Writing Verilog testbenches for functional verification.
-10. Debugging and validating digital designs using simulation tools such as Icarus Verilog and EDA Playground.
-11. Applying RTL design practices that support future FPGA implementation.
-12. Understanding how hardware modules can be extended into a complete hardware-software ATM system.
-
----
-
-## 🌐 Full-Stack Web Interface & Deployment (`atm_fullstack`)
-
-The repository includes a full-stack web front-end and REST API under [`atm_fullstack/`](./atm_fullstack) that connects directly to the Verilog controller via Icarus Verilog (`iverilog` / `vvp`).
-
-### ✨ Full-Stack Features
-* **Web Banking Portal** (`/`): User sign-in, account creation, live balance check, deposit, withdrawal, transaction history ledger, and live Verilog bus monitor.
-* **Virtual ATM Hardware Console** (`/atm`): Physical ATM simulator with LCD screen, 4x4 keypad, card slot, and real-time hardware pin monitoring (`state`, `auth`, `locked`, `attempts`, `balance`, `ok`, `insuf`).
-* **Hardware Backed**: All PIN validations, account locks (3 attempts), balance queries, withdrawals, and deposits are computed by the Verilog RTL simulation.
-* **Database Persistence**: SQLite database stores accounts and transaction history.
-
-### 🚀 Quick Start (Local)
 ```bash
 cd atm_fullstack
 python3 app.py
-# Open http://localhost:8000 in your browser
-```
-Demo Accounts:
-* Card: `1001` · PIN: `1234` ($1,000 balance)
-* Card: `1002` · PIN: `4321` ($2,500 balance)
-
-### 🐳 Deployment via Docker
-Run with Docker Compose:
-```bash
-cd atm_fullstack
-docker compose up -d --build
-```
-Or build and run the Docker container directly:
-```bash
-cd atm_fullstack
-docker build -t atm-controller-bank .
-docker run -p 8000:8000 atm-controller-bank
 ```
 
-### 🧪 Run Test Suite
+Then open:
+
+- `http://localhost:8000/` for the bank interface
+- `http://localhost:8000/atm` for the ATM simulator
+
+### Run tests
+
 ```bash
 cd atm_fullstack
 python3 tests/test_scenarios.py
 ```
+
+---
+
+## Deployment
+
+This repository includes cloud and container deployment support:
+
+### Docker
+
+The root `Dockerfile` and `atm_fullstack/Dockerfile` package the application for running on a container platform.
+
+```bash
+docker build -t atm-controller-bank .
+docker run -p 8000:8000 atm-controller-bank
+```
+
+Or from the full-stack directory:
+
+```bash
+cd atm_fullstack
+docker compose up -d --build
+```
+
+### Render
+
+`render.yaml` defines a web service for deployment on Render.
+
+### Vercel
+
+`vercel.json` rewrites API and page routes for Vercel hosting.
+
+The `api/index.py` file configures the serverless entry point for the banking backend.
+
+---
+
+## Simulation and Verification
+
+The design supports both HDL-level verification and integrated backend testing.
+
+- `ATM_Controller/tb_atm_top.v` validates the Verilog logic through simulation
+- `atm_fullstack/tests/test_scenarios.py` checks the backend and transaction flow
+- Icarus Verilog is used to execute the hardware model when available
+- the application can also fall back to a Python mock mode for demos and testing
+
+---
+
+## Typical ATM Flow
+
+```text
+IDLE
+  -> PIN ENTRY
+  -> ACCOUNT SELECTION
+  -> TRANSACTION MENU
+      -> BALANCE INQUIRY
+      -> WITHDRAWAL
+      -> DEPOSIT
+  -> TRANSACTION COMPLETE
+  -> INVALID PIN / INSUFFICIENT FUNDS / LOCKED STATE
+```
+
+---
+
+## Technology Stack
+
+- Verilog HDL
+- Icarus Verilog
+- Python 3
+- SQLite
+- Flask-like lightweight HTTP server patterns
+- Docker
+- HTML/CSS/JavaScript UI
+
+---
+
+## Notes
+
+This project demonstrates both digital design and integration engineering:
+
+- designing a real hardware ATM controller in Verilog
+- verifying control behavior with a testbench
+- exposing simulation results to a web interface
+- combining hardware logic with software account and transaction management
+
+It is suitable for FPGA-oriented learning, hardware design practice, and full-stack demonstration of embedded logic using a web front end.
+
+---
+
+## License
+
+This project is provided for educational and demonstration purposes.
